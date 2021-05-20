@@ -1,0 +1,58 @@
+[api]
+  dashboard = true
+
+[entryPoints]
+  [entryPoints.web]
+    address = ":80"
+    
+    [entryPoints.web.http]
+      [entryPoints.web.http.redirections]
+        [entryPoints.web.http.redirections.entryPoint]
+          to = "websecure"
+          scheme = "https"
+
+  [entryPoints.websecure]
+    address = ":443"
+
+    [entryPoints.websecure.http.tls]
+      options = "default"
+      certResolver = "leresolver"
+
+      [entryPoints.websecure.http.tls.domains]
+        main = "thbz.site"
+        sans = [
+            "traefik.thbz.site",
+            "bitwarden.thbz.site",
+            "nextcloud.thbz.site",
+        ]
+
+[certificatesResolvers.leresolver.acme]
+  email = "devnull@thbz.site"
+  storage = "/letsencrypt/acme.json"
+  caServer = "https://acme-v02.api.letsencrypt.org/directory"
+  #caServer = "https://acme-staging-v02.api.letsencrypt.org/directory"
+    
+    [certificatesResolvers.leresolver.acme.httpChallenge]
+      entryPoint = "web"
+
+[tls.options]
+  [tls.options.default]
+    minVersion = "VersionTLS12"
+
+[providers.docker]
+  network = "webgateway"
+
+[serversTransport]
+  insecureSkipVerify = true
+  maxIdleConnsPerHost = 4
+
+  [serversTransport.forwardingTimeouts]
+    dialTimeout = "10s"
+
+[log]
+  filePath = "/var/log/traefik.log"
+  level = "INFO"
+
+[accessLog]
+  filePath = "/var/log/access.log"
+  bufferingSize = 100

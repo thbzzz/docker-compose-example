@@ -1,0 +1,60 @@
+version: '3'
+services:
+  nextcloud:
+    image: nextcloud:21
+    container_name: nextcloud
+    restart: unless-stopped
+    networks:
+      webgateway:
+        ipv4_address: ${IP_WEBGATEWAY}
+      nextcloud:
+        ipv4_address: ${IP_NEXTCLOUD}
+    volumes:
+      - data:/var/www/html
+      - logs:/var/log/apache2
+    environment:
+      MYSQL_HOST: nextcloud_db
+      TRUSTED_PROXIES: ${TRAEFIK_IP}
+    labels:
+      - "traefik.http.routers.nextcloud.rule=Host(`nextcloud.thbz.site`)"
+      - "traefik.http.routers.nextcloud.entrypoints=websecure"
+      - "traefik.http.routers.nextcloud.tls=true"
+      - "traefik.http.routers.nextcloud.tls.certresolver=leresolver"
+      - "traefik.http.routers.nextcloud.middlewares=dav,hsts"
+      - "traefik.http.routers.nextcloud.service=nextcloud"
+      - "traefik.http.middlewares.dav.redirectregex.permanent=true"
+      - "traefik.http.middlewares.dav.redirectregex.regex=https://(.*)/.well-known/(card|cal)dav"
+      - "traefik.http.middlewares.dav.redirectregex.replacement=https://$$1/remote.php/dav/" 
+      - "traefik.http.middlewares.hsts.headers.stsseconds=15552000" 
+      - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
+      - "traefik.docker.network=webgateway"
+    depends_on:
+      - nextcloud_db
+
+  nextcloud_db:
+    image: mariadb:10
+    container_name: nextcloud_db
+    restart: unless-stopped
+    networks:
+      nextcloud:
+        ipv4_address: ${DB_IP_NEXTCLOUD}
+    volumes:
+      - dbdata:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+networks:
+  webgateway:
+    external:
+      name: webgateway
+  nextcloud:
+    external:
+      name: nextcloud
+
+volumes:
+  data: {}
+  logs: {}
+  dbdata: {}

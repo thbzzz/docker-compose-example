@@ -1,0 +1,30 @@
+version: '3'
+services:
+  bitwarden:
+    image: vaultwarden/server:1.21.0
+    container_name: bitwarden
+    restart: unless-stopped
+    networks:
+      webgateway:
+        ipv4_address: ${IP}
+    volumes:
+      - data:/data
+    environment:
+      WEBSOCKET_ENABLED: "true"
+      SIGNUPS_ALLOWED: "false"
+    labels:
+      - "traefik.http.routers.bitwarden.rule=Host(`bitwarden.thbz.site`)"
+      - "traefik.http.routers.bitwarden.entrypoints=websecure"
+      - "traefik.http.routers.bitwarden.tls=true"
+      - "traefik.http.routers.bitwarden.tls.certresolver=leresolver"
+      - "traefik.http.routers.bitwarden.service=bitwarden"
+      - "traefik.http.services.bitwarden.loadbalancer.server.port=80"
+      - "traefik.docker.network=webgateway"
+
+networks:
+  webgateway:
+    external:
+      name: webgateway
+
+volumes:
+  data: {}

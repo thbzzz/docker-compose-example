@@ -1,0 +1,4 @@
+#!/bin/bash
+for svc in $(ls -d */); do
+    cd /root/docker-compose-example/$svc && docker-compose start || docker-compose up -d
+done

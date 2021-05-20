@@ -1,0 +1,33 @@
+version: '3'
+services:
+  traefik:
+    image: traefik:2.4
+    container_name: traefik
+    restart: unless-stopped
+    networks:
+      webgateway:
+        ipv4_address: ${IP} 
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./conf:/etc/traefik
+      - cert:/letsencrypt
+      - logs:/var/log
+    labels:
+      - "traefik.http.routers.traefik.rule=Host(`traefik.thbz.site`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls.certresolver=leresolver"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.users=${USERNAME}:${PASSWORD}"
+
+networks:
+  webgateway:
+    external:
+      name: webgateway
+
+volumes:
+  cert: {}
+  logs: {}
